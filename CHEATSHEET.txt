@@ -1,0 +1,109 @@
+╔══════════════════════════════════════════════════════════════╗
+║             INKYPI PHOTO WALL - CHEAT SHEET                  ║
+╚══════════════════════════════════════════════════════════════╝
+
+WHAT THIS DOES:
+  Displays photos from Immich album on eInk display
+  Refreshes 5 times a day: 7am, 10am, 1pm, 4pm, 7pm
+  Pi sleeps between refreshes to save battery
+  Battery lasts several days between charges
+
+HARDWARE:
+  Raspberry Pi Zero 2W
+  Waveshare eInk Display
+  PiSugar Battery Hat
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ AFTER CHARGING BATTERY (Normal Startup)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. Press PiSugar button once to power on
+  2. Wait ~3 minutes
+  3. Display refreshes with new photo automatically
+  4. Pi shuts itself off
+  5. Everything is automatic from here!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ SSH INTO PI (to make changes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ssh YOUR_USERNAME@inkypi.local
+  Password: (your password)
+
+  InkyPi Web UI: http://inkypi.local
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CHECK IF EVERYTHING IS WORKING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # View recent logs
+  cat ~/inkypi_schedule/inky_refresh.log
+
+  # Check battery level
+  echo "get battery" | nc -q 0 127.0.0.1 8423
+
+  # Check RTC alarm status
+  echo "get rtc_alarm_enabled" | nc -q 0 127.0.0.1 8423
+
+  # Check cron schedule
+  sudo crontab -l
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STOP THE AUTO CYCLE (for maintenance)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Step 1: Disable RTC alarm
+  echo "rtc_alarm_disable" | nc -q 0 127.0.0.1 8423
+
+  # Step 2: Rename script so it cant run on next boot
+  mv ~/inkypi_schedule/inky_refresh.sh ~/inkypi_schedule/inky_refresh.sh.bak
+
+  # Step 3: Remove reboot cron
+  sudo crontab -e
+  (delete the @reboot line, save and exit)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ START THE AUTO CYCLE AGAIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Step 1: Restore the script
+  mv ~/inkypi_schedule/inky_refresh.sh.bak ~/inkypi_schedule/inky_refresh.sh
+
+  # Step 2: Add reboot cron
+  sudo crontab -e
+  (add this line at the bottom)
+  @reboot sleep 20 && /home/YOUR_USERNAME/inkypi_schedule/inky_refresh.sh
+
+  # Step 3: Enable RTC alarm
+  echo "rtc_alarm_enable" | nc -q 0 127.0.0.1 8423
+
+  # Step 4: Reboot Pi to kick off first cycle
+  sudo reboot
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ MANUALLY FORCE A DISPLAY REFRESH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  curl -s -X POST http://localhost:80/display_plugin_instance \
+    -H "Content-Type: application/json" \
+    -d '{"playlist_name": "YOUR_PLAYLIST", "plugin_id": "image_album", "plugin_instance": "YOUR_INSTANCE"}'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ KEY FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Main script : ~/inkypi_schedule/inky_refresh.sh
+  Log file    : ~/inkypi_schedule/inky_refresh.log
+  This file   : ~/inkypi_schedule/CHEATSHEET.txt
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ YOUR INKYPI DETAILS (fill in after setup)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Playlist    : YOUR_PLAYLIST
+  Plugin      : image_album
+  Instance    : YOUR_INSTANCE
+  Album       : YOUR_ALBUM_NAME
+  Immich URL  : YOUR_IMMICH_URL
+  InkyPi port : 80
+  PiSugar port: 8423
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ RECOMMENDED DISPLAY SETTINGS (InkyPi Web UI → Settings)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Saturation  : 1.5
+  Contrast    : 1.2
+  Sharpness   : 1.3
+  Brightness  : 1.1
