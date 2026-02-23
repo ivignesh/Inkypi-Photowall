@@ -163,6 +163,17 @@ curl -s -X POST http://localhost:80/display_plugin_instance \
 - Press PiSugar button once to wake Pi manually
 - Automatic cycle resumes from there
 
+**Pi Zero 2 WH not powering from PiSugar 3**
+When using a Raspberry Pi Zero 2 WH (factory-soldered headers) with PiSugar 3, the pogo pins may not make proper contact with the pads underneath the Pi.
+
+**Fix:** Add a slight flex/extension to the pogo pins so they press firmly against the Pi’s underside pads.  
+  After this adjustment, the connection was stable, and the issue was resolved.
+
+![Pogo pin flex adjustment](Pogo_Fix.png)
+
+  ⚠️ Do not add spacers between the Pi and PiSugar, as this increases the gap.  
+  ⚠️ Always turn off or disconnect the battery before mounting.
+
 ## Recommended Display Settings
 
 In InkyPi Web UI → Settings:
